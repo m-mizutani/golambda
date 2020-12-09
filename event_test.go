@@ -10,7 +10,7 @@ import (
 	"github.com/m-mizutani/golambda"
 )
 
-func TestDecapSQSEvent(t *testing.T) {
+func TestDecapSQSBody(t *testing.T) {
 	t.Run("can make SQSEvent to EventRecord", func(t *testing.T) {
 		v := &golambda.Event{
 			Origin: events.SQSEvent{
@@ -26,7 +26,7 @@ func TestDecapSQSEvent(t *testing.T) {
 				},
 			},
 		}
-		events, err := v.DecapSQSEvent()
+		events, err := v.DecapSQSBody()
 
 		require.NoError(t, err)
 		require.Equal(t, 2, len(events))
@@ -38,7 +38,7 @@ func TestDecapSQSEvent(t *testing.T) {
 		v := &golambda.Event{
 			Origin: events.SQSEvent{},
 		}
-		events, err := v.DecapSQSEvent()
+		events, err := v.DecapSQSBody()
 
 		require.Error(t, err)
 		assert.Nil(t, events)
@@ -61,7 +61,7 @@ func TestDecapSQSEvent(t *testing.T) {
 				},
 			},
 		}
-		events, err := v.DecapSQSEvent()
+		events, err := v.DecapSQSBody()
 
 		require.Error(t, err)
 		assert.Nil(t, events)

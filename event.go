@@ -37,8 +37,8 @@ func (x EventRecord) Bind(ev interface{}) error {
 	return nil
 }
 
-// DecapSQSEvent decapsulate wrapped body data in SQSEvent
-func (x *Event) DecapSQSEvent() ([]EventRecord, error) {
+// DecapSQSBody decapsulate wrapped body data in SQSEvent
+func (x *Event) DecapSQSBody() ([]EventRecord, error) {
 	var sqsEvent events.SQSEvent
 	if err := x.Bind(&sqsEvent); err != nil {
 		return nil, err
@@ -59,8 +59,8 @@ func (x *Event) DecapSQSEvent() ([]EventRecord, error) {
 	return output, nil
 }
 
-// DecapSNSonSQSEvent decapsulate wrapped body data to in SNSEntity over SQSEvent
-func (x *Event) DecapSNSonSQSEvent() ([]EventRecord, error) {
+// DecapSNSonSQSMessage decapsulate wrapped body data to in SNSEntity over SQSEvent
+func (x *Event) DecapSNSonSQSMessage() ([]EventRecord, error) {
 	var sqsEvent events.SQSEvent
 	if err := x.Bind(&sqsEvent); err != nil {
 		return nil, err
@@ -83,8 +83,8 @@ func (x *Event) DecapSNSonSQSEvent() ([]EventRecord, error) {
 	return output, nil
 }
 
-// DecapSNSEvent decapsulate wrapped body data in SNSEvent
-func (x *Event) DecapSNSEvent() ([]EventRecord, error) {
+// DecapSNSMessage decapsulate wrapped body data in SNSEvent
+func (x *Event) DecapSNSMessage() ([]EventRecord, error) {
 	var snsEvent events.SNSEvent
 	if err := x.Bind(&snsEvent); err != nil {
 		return nil, err

@@ -1,16 +1,5 @@
-# golambda
+// +build decap_event
 
-Utilities for lambda function in Go language.
-
-Use cases
-
-- Decapsulate source event
-- Logging
-- Error handling (with sentry)
-
-## Decapsulate source event
-
-```go
 package main
 
 import (
@@ -47,4 +36,3 @@ func Handler(ctx context.Context, event golambda.Event) (interface{}, error) {
 func main() {
 	golambda.Start(Handler)
 }
-```
