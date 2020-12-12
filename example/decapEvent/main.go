@@ -3,7 +3,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/m-mizutani/golambda"
@@ -13,7 +12,7 @@ type myMessage struct {
 	Something string
 }
 
-func Handler(ctx context.Context, event golambda.Event) (interface{}, error) {
+func Handler(event golambda.Event) (interface{}, error) {
 	events, err := event.DecapSQSBody()
 	if err != nil {
 		return nil, err

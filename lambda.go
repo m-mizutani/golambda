@@ -7,12 +7,12 @@ import (
 	"github.com/aws/aws-lambda-go/lambdacontext"
 )
 
-// Callback is callback function type of lambda.Run()
-type Callback func(event Event) error
+// Callback is callback function type of golambda.Start()
+type Callback func(event Event) (interface{}, error)
 
 // Start sets up Arguments and logging tools, then invoke Callback with Arguments
 func Start(callback Callback) {
-	lambda.Start(func(ctx context.Context, origin interface{}) error {
+	lambda.Start(func(ctx context.Context, origin interface{}) (interface{}, error) {
 		defer flushSentry()
 		Logger.Info().Interface("event", origin).Msg("Lambda start")
 
@@ -24,7 +24,8 @@ func Start(callback Callback) {
 			Origin: origin,
 		}
 
-		if err := callback(event); err != nil {
+		resp, err := callback(event)
+		if err != nil {
 			log := Logger.Error()
 
 			if evID := emitSentry(err); evID != "" {
@@ -39,9 +40,9 @@ func Start(callback Callback) {
 			}
 
 			log.Msg(err.Error())
-			return err
+			return nil, err
 		}
 
-		return nil
+		return resp, nil
 	})
 }
