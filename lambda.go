@@ -4,39 +4,36 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/m-mizutani/golambda/errors"
-	"github.com/m-mizutani/golambda/logging"
 )
 
-// Handler is callback function type of lambda.Run()
-type Handler func(ctx context.Context, event Event) (interface{}, error)
+// Callback is callback function type of lambda.Run()
+type Callback func(event Event) error
 
-// Start sets up Arguments and logging tools, then invoke handler with Arguments
-func Start(handler Handler) {
-	lambda.Start(func(ctx context.Context, origin interface{}) (interface{}, error) {
-		defer errors.FlushSentry()
-		logging.Logger.Info().Interface("event", origin).Msg("Lambda start")
+// Start sets up Arguments and logging tools, then invoke Callback with Arguments
+func Start(callback Callback) {
+	lambda.Start(func(ctx context.Context, origin interface{}) error {
+		defer flushSentry()
+		Logger.Info().Interface("event", origin).Msg("Lambda start")
 
-		event := Event{
-			Origin: origin,
-		}
+		if err := callback(Event{Origin: origin}); err != nil {
+			log := Logger.Error()
 
-		response, err := handler(ctx, event)
-		if err != nil {
-			errors.EmitSentry(err)
+			if evID := emitSentry(err); evID != "" {
+				log = log.Str("sentry.eventID", evID)
+			}
 
-			log := logging.Logger.Error()
-			if e, ok := err.(*errors.Error); ok {
+			if e, ok := err.(*Error); ok {
 				for key, value := range e.Values {
 					log = log.Interface(key, value)
 				}
 				log = log.Str("stacktrace", e.StackTrace())
+			} else {
 			}
 
 			log.Msg(err.Error())
-			return nil, err
+			return err
 		}
 
-		return response, nil
+		return nil
 	})
 }

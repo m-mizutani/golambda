@@ -1,4 +1,4 @@
-package errors
+package golambda
 
 func init() {
 	initSentry()

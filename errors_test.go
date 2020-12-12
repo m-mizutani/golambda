@@ -1,24 +1,24 @@
-package errors_test
+package golambda_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/m-mizutani/golambda/errors"
+	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
 )
 
-func oops() *errors.Error {
-	return errors.New("omg")
+func oops() *golambda.Error {
+	return golambda.NewError("omg")
 }
 
 func normalError() error {
 	return fmt.Errorf("red")
 }
 
-func wrapError() *errors.Error {
+func wrapError() *golambda.Error {
 	err := normalError()
-	return errors.Wrap(err, "orange")
+	return golambda.WrapError(err, "orange")
 }
 
 func TestNewError(t *testing.T) {
@@ -33,12 +33,4 @@ func TestWrapError(t *testing.T) {
 	assert.Contains(t, st, "errors_test.wrapError")
 	assert.NotContains(t, st, "errors_test.normalError")
 	assert.Contains(t, err.Error(), "orange: red")
-}
-
-func TestSentryEmit(t *testing.T) {
-	err := wrapError()
-	errors.EmitSentry(err)
-	errors.FlushSentry()
-	_, ok := err.Values["sentry.eventID"]
-	assert.False(t, ok) // SENTRY_DSN is not set
 }

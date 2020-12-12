@@ -1,6 +1,7 @@
-package errors
+package golambda
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -22,19 +23,18 @@ func initSentry() {
 	}
 }
 
-func EmitSentry(err error) {
+func emitSentry(err error) string {
 	if sentryEnabled {
 		eventID := sentry.CaptureException(err)
 		if eventID != nil {
 			// Add sentry eventID to original error
-			if e, ok := err.(*Error); ok {
-				_ = e.With("sentry.eventID", eventID)
-			}
+			return fmt.Sprintf("%v", eventID)
 		}
 	}
+	return ""
 }
 
-func FlushSentry() {
+func flushSentry() {
 	if sentryEnabled {
 		sentry.Flush(2 * time.Second)
 	}
