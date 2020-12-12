@@ -85,13 +85,13 @@ func (x *Error) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			io.WriteString(s, x.Error())
+			_, _ = io.WriteString(s, x.Error())
 			x.st.Format(s, verb)
 			return
 		}
 		fallthrough
 	case 's':
-		io.WriteString(s, x.Error())
+		_, _ = io.WriteString(s, x.Error())
 	case 'q':
 		fmt.Fprintf(s, "%q", x.Error())
 	}
@@ -205,19 +205,19 @@ func (f frame) Format(s fmt.State, verb rune) {
 	case 's':
 		switch {
 		case s.Flag('+'):
-			io.WriteString(s, f.name())
-			io.WriteString(s, "\n\t")
-			io.WriteString(s, f.file())
+			_, _ = io.WriteString(s, f.name())
+			_, _ = io.WriteString(s, "\n\t")
+			_, _ = io.WriteString(s, f.file())
 		default:
-			io.WriteString(s, path.Base(f.file()))
+			_, _ = io.WriteString(s, path.Base(f.file()))
 		}
 	case 'd':
-		io.WriteString(s, strconv.Itoa(f.line()))
+		_, _ = io.WriteString(s, strconv.Itoa(f.line()))
 	case 'n':
-		io.WriteString(s, funcname(f.name()))
+		_, _ = io.WriteString(s, funcname(f.name()))
 	case 'v':
 		f.Format(s, 's')
-		io.WriteString(s, ":")
+		_, _ = io.WriteString(s, ":")
 		f.Format(s, 'd')
 	}
 }
@@ -246,7 +246,7 @@ func (st stackTrace) Format(s fmt.State, verb rune) {
 		switch {
 		case s.Flag('+'):
 			for _, f := range st {
-				io.WriteString(s, "\n")
+				_, _ = io.WriteString(s, "\n")
 				f.Format(s, verb)
 			}
 		case s.Flag('#'):
@@ -262,14 +262,14 @@ func (st stackTrace) Format(s fmt.State, verb rune) {
 // formatSlice will format this StackTrace into the given buffer as a slice of
 // Frame, only valid when called with '%s' or '%v'.
 func (st stackTrace) formatSlice(s fmt.State, verb rune) {
-	io.WriteString(s, "[")
+	_, _ = io.WriteString(s, "[")
 	for i, f := range st {
 		if i > 0 {
-			io.WriteString(s, " ")
+			_, _ = io.WriteString(s, " ")
 		}
 		f.Format(s, verb)
 	}
-	io.WriteString(s, "]")
+	_, _ = io.WriteString(s, "]")
 }
 
 func (s *stack) Format(st fmt.State, verb rune) {
