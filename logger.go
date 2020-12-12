@@ -40,5 +40,5 @@ func initLogger() {
 }
 
 func setRequestIDtoLogger(requestID string) {
-	Logger = Logger.With().Str("lambda.request_id", requestID).Logger()
+	Logger = Logger.With().Str("lambda.requestID", requestID).Logger()
 }
