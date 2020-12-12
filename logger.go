@@ -9,17 +9,18 @@ import (
 )
 
 type lambdaLogger struct {
-	logger zerolog.Logger
+	zeroLogger zerolog.Logger
 }
 
 // LogEntry is one record of logging. Trace, Debug, Info and Error methods emit message and values
 type LogEntry struct {
-	logger zerolog.Logger
+	logger *lambdaLogger
 	values map[string]interface{}
 }
 
 func (x *lambdaLogger) NewLogEntry() *LogEntry {
 	return &LogEntry{
+		logger: x,
 		values: make(map[string]interface{}),
 	}
 }
@@ -30,7 +31,7 @@ func (x *lambdaLogger) Info(msg string)  { x.NewLogEntry().Info(msg) }
 func (x *lambdaLogger) Error(msg string) { x.NewLogEntry().Error(msg) }
 
 func (x *lambdaLogger) Set(key string, value interface{}) {
-	x.logger = x.logger.With().Interface(key, value).Logger()
+	x.zeroLogger = x.zeroLogger.With().Interface(key, value).Logger()
 }
 
 func (x *lambdaLogger) With(key string, value interface{}) *LogEntry {
@@ -53,28 +54,28 @@ func (x *LogEntry) bind(ev *zerolog.Event) {
 
 // Trace emits log message as trace level.
 func (x *LogEntry) Trace(msg string) {
-	ev := x.logger.Trace()
+	ev := x.logger.zeroLogger.Trace()
 	x.bind(ev)
 	ev.Msg(msg)
 }
 
 // Debug emits log message as debug level.
 func (x *LogEntry) Debug(msg string) {
-	ev := x.logger.Debug()
+	ev := x.logger.zeroLogger.Debug()
 	x.bind(ev)
 	ev.Msg(msg)
 }
 
 // Info emits log message as info level.
 func (x *LogEntry) Info(msg string) {
-	ev := x.logger.Info()
+	ev := x.logger.zeroLogger.Info()
 	x.bind(ev)
 	ev.Msg(msg)
 }
 
 // Error emits log message as error level.
 func (x *LogEntry) Error(msg string) {
-	ev := x.logger.Error()
+	ev := x.logger.zeroLogger.Error()
 	x.bind(ev)
 	ev.Msg(msg)
 }
@@ -108,6 +109,6 @@ func initLogger() {
 
 	logger := zerolog.New(writer).Level(zeroLogLevel).With().Timestamp().Logger()
 	Logger = &lambdaLogger{
-		logger: logger,
+		zeroLogger: logger,
 	}
 }
