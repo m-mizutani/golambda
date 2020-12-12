@@ -6,6 +6,7 @@ import (
 
 	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func oops() *golambda.Error {
@@ -34,4 +35,13 @@ func TestWrapError(t *testing.T) {
 	assert.Contains(t, st, "github.com/m-mizutani/golambda_test.TestWrapError\n")
 	assert.NotContains(t, st, "github.com/m-mizutani/golambda_test.normalError\n")
 	assert.Contains(t, err.Error(), "orange: red")
+}
+
+func TestStackTrace(t *testing.T) {
+	err := oops()
+	st := err.StackTrace()
+	require.Equal(t, 4, len(st))
+	assert.Equal(t, "github.com/m-mizutani/golambda_test.oops", st[0].Func)
+	assert.Regexp(t, `/golambda/errors_test\.go$`, st[0].File)
+	assert.Equal(t, 13, st[0].Line)
 }

@@ -26,8 +26,7 @@ func Start(callback Callback) {
 				for key, value := range e.Values {
 					log = log.Interface(key, value)
 				}
-				log = log.Str("stacktrace", e.StackTrace())
-			} else {
+				log = log.Interface("stacktrace", e.StackTrace())
 			}
 
 			log.Msg(err.Error())
