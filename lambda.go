@@ -14,10 +14,10 @@ type Callback func(event Event) (interface{}, error)
 func Start(callback Callback) {
 	lambda.Start(func(ctx context.Context, origin interface{}) (interface{}, error) {
 		defer flushSentry()
-		Logger.Info().Interface("event", origin).Msg("Lambda start")
+		Logger.With("event", origin).Info("Lambda start")
 
 		lc, _ := lambdacontext.FromContext(ctx)
-		setRequestIDtoLogger(lc.AwsRequestID)
+		Logger.Set("lambda.requestID", lc.AwsRequestID)
 
 		event := Event{
 			Ctx:    ctx,
@@ -26,20 +26,20 @@ func Start(callback Callback) {
 
 		resp, err := callback(event)
 		if err != nil {
-			log := Logger.Error()
+			log := Logger.NewLogEntry()
 
 			if evID := emitSentry(err); evID != "" {
-				log = log.Str("sentry.eventID", evID)
+				log.With("sentry.eventID", evID)
 			}
 
 			if e, ok := err.(*Error); ok {
 				for key, value := range e.Values() {
-					log = log.Interface(key, value)
+					log = log.With(key, value)
 				}
-				log = log.Interface("stacktrace", e.StackTrace())
+				log.With("stacktrace", e.StackTrace())
 			}
 
-			log.Msg(err.Error())
+			log.Error(err.Error())
 			return nil, err
 		}
 

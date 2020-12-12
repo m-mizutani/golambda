@@ -3,8 +3,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/m-mizutani/golambda"
 )
 
@@ -26,7 +24,7 @@ func Handler(event golambda.Event) (interface{}, error) {
 		}
 
 		// Do something
-		fmt.Println("something: ", msg.Something)
+		golambda.Logger.With("something", msg.Something).Info("hello")
 	}
 
 	return nil, nil
