@@ -23,7 +23,7 @@ func Start(callback Callback) {
 			}
 
 			if e, ok := err.(*Error); ok {
-				for key, value := range e.Values {
+				for key, value := range e.Values() {
 					log = log.Interface(key, value)
 				}
 				log = log.Interface("stacktrace", e.StackTrace())
