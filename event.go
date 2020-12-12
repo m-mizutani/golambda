@@ -1,6 +1,7 @@
 package golambda
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 
@@ -10,6 +11,7 @@ import (
 
 // Event provides lambda original event converting utilities
 type Event struct {
+	Ctx    context.Context
 	Origin interface{}
 }
 

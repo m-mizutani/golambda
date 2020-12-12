@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go/lambdacontext"
 )
 
 // Callback is callback function type of lambda.Run()
@@ -15,7 +16,15 @@ func Start(callback Callback) {
 		defer flushSentry()
 		Logger.Info().Interface("event", origin).Msg("Lambda start")
 
-		if err := callback(Event{Origin: origin}); err != nil {
+		lc, _ := lambdacontext.FromContext(ctx)
+		setRequestIDtoLogger(lc.AwsRequestID)
+
+		event := Event{
+			Ctx:    ctx,
+			Origin: origin,
+		}
+
+		if err := callback(event); err != nil {
 			log := Logger.Error()
 
 			if evID := emitSentry(err); evID != "" {

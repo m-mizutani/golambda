@@ -11,12 +11,10 @@ import (
 // Logger is common logging interface
 var Logger zerolog.Logger
 
-func init() {
-	Init(os.Getenv("LOG_LEVEL"))
-}
+// InitLogger configures logger
+func initLogger() {
+	logLevel := os.Getenv("LOG_LEVEL")
 
-// Init configures logger
-func Init(logLevel string) {
 	var zeroLogLevel zerolog.Level
 	switch strings.ToLower(logLevel) {
 	case "trace":
@@ -39,4 +37,8 @@ func Init(logLevel string) {
 
 	logger := zerolog.New(writer).Level(zeroLogLevel).With().Timestamp().Logger()
 	Logger = logger
+}
+
+func setRequestIDtoLogger(requestID string) {
+	Logger = Logger.With().Str("lambda.request_id", requestID).Logger()
 }
