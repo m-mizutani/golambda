@@ -35,7 +35,7 @@ type Error struct {
 	msg    string
 	st     *stack
 	cause  error
-	values map[string]interface{} `json:"values"`
+	values map[string]interface{}
 }
 
 func newError(msg string) *Error {
