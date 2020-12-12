@@ -23,14 +23,15 @@ func wrapError() *golambda.Error {
 
 func TestNewError(t *testing.T) {
 	err := oops()
-	assert.Contains(t, fmt.Sprintf("%+v", err.Unwrap()), "errors_test.oops")
+	assert.Contains(t, fmt.Sprintf("%+v", err), "golambda_test.oops")
 	assert.Contains(t, err.Error(), "omg")
 }
 
 func TestWrapError(t *testing.T) {
 	err := wrapError()
-	st := fmt.Sprintf("%+v", err.Unwrap())
-	assert.Contains(t, st, "errors_test.wrapError")
-	assert.NotContains(t, st, "errors_test.normalError")
+	st := fmt.Sprintf("%+v", err)
+	assert.Contains(t, st, "github.com/m-mizutani/golambda_test.wrapError\n")
+	assert.Contains(t, st, "github.com/m-mizutani/golambda_test.TestWrapError\n")
+	assert.NotContains(t, st, "github.com/m-mizutani/golambda_test.normalError\n")
 	assert.Contains(t, err.Error(), "orange: red")
 }
