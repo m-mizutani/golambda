@@ -1,1 +1,6 @@
 .vscode
+
+# for example/deployable
+node_modules
+build
+cdk.out
