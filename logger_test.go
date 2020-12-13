@@ -12,7 +12,7 @@ func TestLogger(t *testing.T) {
 
 	t.Run("output trace level or more when set trace level", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		logger := &lambdaLogger{
+		logger := &LambdaLogger{
 			zeroLogger: zerolog.New(buf).Level(zerolog.TraceLevel),
 		}
 
@@ -28,7 +28,7 @@ func TestLogger(t *testing.T) {
 
 	t.Run("output debug level or more when set debug level", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		logger := &lambdaLogger{
+		logger := &LambdaLogger{
 			zeroLogger: zerolog.New(buf).Level(zerolog.DebugLevel),
 		}
 
@@ -44,7 +44,7 @@ func TestLogger(t *testing.T) {
 
 	t.Run("output info level or more when set info level", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		logger := &lambdaLogger{
+		logger := &LambdaLogger{
 			zeroLogger: zerolog.New(buf).Level(zerolog.InfoLevel),
 		}
 
@@ -60,7 +60,7 @@ func TestLogger(t *testing.T) {
 
 	t.Run("output error level or more when set error level", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		logger := &lambdaLogger{
+		logger := &LambdaLogger{
 			zeroLogger: zerolog.New(buf).Level(zerolog.ErrorLevel),
 		}
 
@@ -76,7 +76,7 @@ func TestLogger(t *testing.T) {
 
 	t.Run("output values provided by With", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		logger := &lambdaLogger{
+		logger := &LambdaLogger{
 			zeroLogger: zerolog.New(buf).Level(zerolog.InfoLevel),
 		}
 
@@ -88,7 +88,7 @@ func TestLogger(t *testing.T) {
 
 	t.Run("output values provided by Set", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		logger := &lambdaLogger{
+		logger := &LambdaLogger{
 			zeroLogger: zerolog.New(buf).Level(zerolog.InfoLevel),
 		}
 

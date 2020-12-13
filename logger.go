@@ -8,34 +8,74 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type lambdaLogger struct {
+// LambdaLogger provides basic logging features for Lambda function. golambda.Logger is configured by default as global variable of golambda.
+type LambdaLogger struct {
 	zeroLogger zerolog.Logger
+}
+
+// NewLambdaLogger returns a new LambdaLogger.
+// NOTE: golambda.Logger is recommended for general usage.
+func NewLambdaLogger(logLevel string) *LambdaLogger {
+	var zeroLogLevel zerolog.Level
+	switch strings.ToLower(logLevel) {
+	case "trace":
+		zeroLogLevel = zerolog.TraceLevel
+	case "debug":
+		zeroLogLevel = zerolog.DebugLevel
+	case "info":
+		zeroLogLevel = zerolog.InfoLevel
+	case "error":
+		zeroLogLevel = zerolog.ErrorLevel
+	default:
+		zeroLogLevel = zerolog.InfoLevel
+	}
+
+	var writer io.Writer = zerolog.ConsoleWriter{Out: os.Stdout}
+	if _, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME"); ok {
+		// If running on AWS Lambda
+		writer = os.Stdout
+	}
+
+	logger := zerolog.New(writer).Level(zeroLogLevel).With().Timestamp().Logger()
+	return &LambdaLogger{
+		zeroLogger: logger,
+	}
 }
 
 // LogEntry is one record of logging. Trace, Debug, Info and Error methods emit message and values
 type LogEntry struct {
-	logger *lambdaLogger
+	logger *LambdaLogger
 	values map[string]interface{}
 }
 
-func (x *lambdaLogger) NewLogEntry() *LogEntry {
+// Entry returns a new LogEntry
+func (x *LambdaLogger) Entry() *LogEntry {
 	return &LogEntry{
 		logger: x,
 		values: make(map[string]interface{}),
 	}
 }
 
-func (x *lambdaLogger) Trace(msg string) { x.NewLogEntry().Trace(msg) }
-func (x *lambdaLogger) Debug(msg string) { x.NewLogEntry().Debug(msg) }
-func (x *lambdaLogger) Info(msg string)  { x.NewLogEntry().Info(msg) }
-func (x *lambdaLogger) Error(msg string) { x.NewLogEntry().Error(msg) }
+// Trace output log as Trace level message
+func (x *LambdaLogger) Trace(msg string) { x.Entry().Trace(msg) }
 
-func (x *lambdaLogger) Set(key string, value interface{}) {
+// Debug output log as Debug level message
+func (x *LambdaLogger) Debug(msg string) { x.Entry().Debug(msg) }
+
+// Info output log as Info level message
+func (x *LambdaLogger) Info(msg string) { x.Entry().Info(msg) }
+
+// Error output log as Error level message
+func (x *LambdaLogger) Error(msg string) { x.Entry().Error(msg) }
+
+// Set saves key and value to logger. The key and value are output permanently
+func (x *LambdaLogger) Set(key string, value interface{}) {
 	x.zeroLogger = x.zeroLogger.With().Interface(key, value).Logger()
 }
 
-func (x *lambdaLogger) With(key string, value interface{}) *LogEntry {
-	entry := x.NewLogEntry()
+// With adds key and value to log message. Value will be represented by zerolog.Interface
+func (x *LambdaLogger) With(key string, value interface{}) *LogEntry {
+	entry := x.Entry()
 	entry.values[key] = value
 	return entry
 }
@@ -81,34 +121,10 @@ func (x *LogEntry) Error(msg string) {
 }
 
 // Logger is common logging interface
-var Logger *lambdaLogger
+var Logger *LambdaLogger
 
 // InitLogger configures logger
 func initLogger() {
 	logLevel := os.Getenv("LOG_LEVEL")
-
-	var zeroLogLevel zerolog.Level
-	switch strings.ToLower(logLevel) {
-	case "trace":
-		zeroLogLevel = zerolog.TraceLevel
-	case "debug":
-		zeroLogLevel = zerolog.DebugLevel
-	case "info":
-		zeroLogLevel = zerolog.InfoLevel
-	case "error":
-		zeroLogLevel = zerolog.ErrorLevel
-	default:
-		zeroLogLevel = zerolog.InfoLevel
-	}
-
-	var writer io.Writer = zerolog.ConsoleWriter{Out: os.Stdout}
-	if _, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME"); ok {
-		// If running on AWS Lambda
-		writer = os.Stdout
-	}
-
-	logger := zerolog.New(writer).Level(zeroLogLevel).With().Timestamp().Logger()
-	Logger = &lambdaLogger{
-		zeroLogger: logger,
-	}
+	Logger = NewLambdaLogger(logLevel)
 }

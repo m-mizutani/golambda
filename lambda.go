@@ -26,20 +26,20 @@ func Start(callback Callback) {
 
 		resp, err := callback(event)
 		if err != nil {
-			log := Logger.NewLogEntry()
+			entry := Logger.Entry()
 
 			if evID := emitSentry(err); evID != "" {
-				log.With("sentry.eventID", evID)
+				entry.With("sentry.eventID", evID)
 			}
 
 			if e, ok := err.(*Error); ok {
 				for key, value := range e.Values() {
-					log = log.With(key, value)
+					entry = entry.With(key, value)
 				}
-				log.With("stacktrace", e.StackTrace())
+				entry.With("stacktrace", e.StackTrace())
 			}
 
-			log.Error(err.Error())
+			entry.Error(err.Error())
 			return nil, err
 		}
 
