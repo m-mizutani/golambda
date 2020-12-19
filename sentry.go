@@ -28,7 +28,7 @@ func emitSentry(err error) string {
 		eventID := sentry.CaptureException(err)
 		if eventID != nil {
 			// Add sentry eventID to original error
-			return fmt.Sprintf("%v", eventID)
+			return fmt.Sprintf("%v", *eventID)
 		}
 	}
 	return ""
