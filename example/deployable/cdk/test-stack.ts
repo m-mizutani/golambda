@@ -17,6 +17,9 @@ export class GolambdaTestStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(10),
       memorySize: 128,
       reservedConcurrentExecutions: 1,
+      environment: {
+        SENTRY_DSN: process.env.SENTRY_DSN || "",
+      },
     });
   }
 }

@@ -36,7 +36,7 @@ func Start(callback Callback) {
 				for key, value := range e.Values() {
 					entry = entry.With(key, value)
 				}
-				entry.With("stacktrace", e.StackTrace())
+				entry.With("stacktrace", e.Stacks())
 			}
 
 			entry.Error(err.Error())

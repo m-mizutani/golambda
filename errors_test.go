@@ -39,7 +39,7 @@ func TestWrapError(t *testing.T) {
 
 func TestStackTrace(t *testing.T) {
 	err := oops()
-	st := err.StackTrace()
+	st := err.Stacks()
 	require.Equal(t, 4, len(st))
 	assert.Equal(t, "github.com/m-mizutani/golambda_test.oops", st[0].Func)
 	assert.Regexp(t, `/golambda/errors_test\.go$`, st[0].File)
