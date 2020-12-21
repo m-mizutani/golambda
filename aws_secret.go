@@ -35,11 +35,13 @@ func GetSecretValues(secretArn string, values interface{}) error {
 		SecretId: aws.String(secretArn),
 	})
 	if err != nil {
-		return WrapError(err, "Fail to retrieve secret values: %s", secretArn)
+		return WrapError(err, "Fail to retrieve secret values").With("arn", secretArn)
 	}
 
 	if err := json.Unmarshal([]byte(*result.SecretString), &values); err != nil {
-		return WrapError(err, "Fail to parse secret values as JSON: %s", secretArn)
+		return WrapError(err, "Fail to parse secret values as JSON").
+			With("arn", secretArn).
+			With("GetSecretValue:result", result)
 	}
 
 	return nil
