@@ -1,4 +1,4 @@
-# golambda [![Travis-CI](https://travis-ci.com/m-mizutani/golambda.svg)](https://travis-ci.org/m-mizutani/golambda) [![GoDoc](https://godoc.org/github.com/m-mizutani/golambda?status.svg)](http://godoc.org/github.com/m-mizutani/golambda) [![Report card](https://goreportcard.com/badge/github.com/m-mizutani/golambda)](https://goreportcard.com/report/github.com/m-mizutani/golambda)
+# golambda [![Travis-CI](https://travis-ci.com/m-mizutani/golambda.svg)](https://travis-ci.org/m-mizutani/golambda) [![Report card](https://goreportcard.com/badge/github.com/m-mizutani/golambda)](https://goreportcard.com/report/github.com/m-mizutani/golambda) [![Go Reference](https://pkg.go.dev/badge/github.com/m-mizutani/golambda.svg)](https://pkg.go.dev/github.com/m-mizutani/golambda)
 
 A suite of Go utilities for AWS Lambda functions to ease adopting best practices.
 
