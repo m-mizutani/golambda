@@ -36,14 +36,12 @@ func Start(callback Callback) {
 			entry := Logger.Entry()
 
 			if evID := emitSentry(err); evID != "" {
-				entry.With("sentry.eventID", evID)
+				entry.With("error.sentryEventID", evID)
 			}
 
 			if e, ok := err.(*Error); ok {
-				for key, value := range e.Values() {
-					entry = entry.With(key, value)
-				}
-				entry.With("stacktrace", e.Stacks())
+				entry.With("error.values", e.Values())
+				entry.With("error.stacktrace", e.Stacks())
 			}
 
 			entry.Error(err.Error())

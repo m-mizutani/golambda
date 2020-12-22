@@ -165,9 +165,11 @@ Lambda function should return error to top level function when occurring unrecov
 Also, `golambda.Start` supports general error handling:
 
 1. Output error log with
-    - Pairs of key and value in `golambda.Error`
-    - Stack trace of error
+    - Pairs of key and value in `golambda.Error` as `error.values`
+    - Stack trace of error as `error.stacktrace`
 2. Send error record to sentry.io if `SENTRY_DSN` is set as environment variable
+    - Stack trace of `golambda.Error` is also available in sentry.io by compatibility with `github.com/pkg/errors`
+    - Output event ID of sentry to log as `error.sentryEventID`
 
 ```go
 package main
