@@ -5,10 +5,10 @@ A suite of Go utilities for AWS Lambda functions to ease adopting best practices
 ## Overview
 ### Features
 
-- **Event decapsulation**: Parse event data received when invoking. Also `golambda` make easy to write unit test of Lambda function
-- **Structured logging**: `golambda` provides requisite minimum logging interface for Lambda function. It output log as structured JSON.
-- **Error handling**: Error structure with arbitrary variables and stack trace feature.
-- **Get secret parameters**: Secret values should be stored in AWS Secrets Manager and can be got easily.
+- **[Event decapsulation](#source-event-decapsulation)**: Parse event data received when invoking. Also `golambda` make easy to write unit test of Lambda function
+- **[Structured logging](#structured-logging)**: `golambda` provides requisite minimum logging interface for Lambda function. It output log as structured JSON.
+- **[Error handling](#error-handling)**: Error structure with arbitrary variables and stack trace feature.
+- **[Get secret parameters](#get-secret-parameters)**: Secret values should be stored in AWS Secrets Manager and can be got easily.
 
 NOTE: The suite is **NOT** focusing to Lambda function for API gateway, but partially can be leveraged for the function.
 
