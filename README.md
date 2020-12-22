@@ -8,7 +8,7 @@ A suite of Go utilities for AWS Lambda functions to ease adopting best practices
 - **Event decapsulation**: Parse event data received when invoking. Also `golambda` make easy to write unit test of Lambda function
 - **Structured logging**: `golambda` provides requisite minimum logging interface for Lambda function. It output log as structured JSON.
 - **Error handling**: Error structure with arbitrary variables and stack trace feature.
-- **Get parameters**: Secret values should be stored in AWS Secrets Manager and can be got easily.
+- **Get secret parameters**: Secret values should be stored in AWS Secrets Manager and can be got easily.
 
 NOTE: The suite is **NOT** focusing to Lambda function for API gateway, but partially can be leveraged for the function.
 
@@ -211,6 +211,24 @@ Then, `golambda` output following log to CloudWatch.
     "time": "2020-12-13T02:42:48Z",
     "message": "oops"
 }
+```
+
+## Get secret parameters
+
+In general, parameters of Lambda function are stored sa environment variable, such as `LOG_LEVEL`. However secret parameters such as credential, API key/token, etc should be stored in AWS Secrets Manager or Parameter Store to control access permission more explicitly in many cases.
+
+`golambda.GetSecretValues` fetches values of AWS Secrets Manager and binds to a structure variable.
+
+```go
+type mySecret struct {
+    Token string `json:"token"`
+}
+var secret mySecret
+if err := golambda.GetSecretValues(os.Getenv("SECRET_ARN"), &secret); err != nil {
+    log.Fatal("Failed: ", err)
+}
+
+// Access to other service with secret.Token
 ```
 
 ## License
