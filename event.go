@@ -40,6 +40,11 @@ func (x EventRecord) Bind(ev interface{}) error {
 	return nil
 }
 
+// String returns raw string data
+func (x EventRecord) String() string {
+	return string(x)
+}
+
 // DecapSQSBody decapsulate wrapped body data in SQSEvent
 func (x *Event) DecapSQSBody() ([]EventRecord, error) {
 	var sqsEvent events.SQSEvent
