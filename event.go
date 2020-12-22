@@ -143,9 +143,11 @@ func (x *Event) DecapSNSonSQSMessage() ([]EventRecord, error) {
 
 // EncapSNSonSQSMessage sets v as SNS entity over SQS. This function overwrite Origin and should be used for testing.
 // EncapSNSonSQSMessage allows both of one record and multiple record as slice or array
+//
 // e.g.)
-// ev.EncapSNSonSQSMessage("red") -> one SQS message on one SQS event
-// ev.EncapSNSonSQSMessage([]string{"blue", "orange"}) -> two SQS message on one SQS event
+//
+//     ev.EncapSNSonSQSMessage("red") // -> one SQS message on one SQS event
+//     ev.EncapSNSonSQSMessage([]string{"blue", "orange"}) // -> two SQS message on one SQS event
 func (x *Event) EncapSNSonSQSMessage(v interface{}) error {
 	snsEntities, err := encapSNSEntity(v)
 	if err != nil {

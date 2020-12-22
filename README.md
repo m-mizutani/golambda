@@ -2,17 +2,31 @@
 
 A suite of Go utilities for AWS Lambda functions to ease adopting best practices.
 
+## Overview
 ### Features
 
-- **Source event decapsulation**: Parse event data received when invoking. Also `golambda` make easy to write unit test of Lambda function
+- **Event decapsulation**: Parse event data received when invoking. Also `golambda` make easy to write unit test of Lambda function
 - **Structured logging**: `golambda` provides requisite minimum logging interface for Lambda function. It output log as structured JSON.
 - **Error handling**: Error structure with arbitrary variables and stack trace feature.
+- **Get parameters**: Secret values should be stored in AWS Secrets Manager and can be got easily.
+
+NOTE: The suite is **NOT** focusing to Lambda function for API gateway, but partially can be leveraged for the function.
+
+### How to use
+
+```
+$ go get github.com/m-mizutani/golambda
+```
+
 
 ## Source event decapsulation
 
-- SQS body
-- SNS message
-- SNS message over SQS
+Lambda function can have event source(s) such as SQS, SNS, etc. The main data is encapsulated in their data structure. `golambda` provides not only decapsulation feature for Lambda execution but also encapsulation feature for testing. Following event sources are supported for now.
+
+- SQS body: `DecapSQSBody`
+- SNS message: `DecapSNSMessage`
+- SNS message over SQS: `DecapSNSonSQSMessage`
+
 ### Lambda implementation
 
 ```go
@@ -29,15 +43,17 @@ type MyEvent struct {
 	Message string `json:"message"`
 }
 
-// Handler is exported for test
+// Handler is sample function. The function concatenates all message in SQS body and returns it.
 func Handler(event golambda.Event) (interface{}, error) {
-	// Decapsulate body message(s) in SQS Event structure
+	// Decapsulate body message(s) in SQS Event structure.
+	// It can also handles multiple SQS records.
 	events, err := event.DecapSQSBody()
 	if err != nil {
 		return nil, err
 	}
 
 	var response []string
+
 	// Iterate body message(S)
 	for _, ev := range events {
 		var msg MyEvent
@@ -92,6 +108,10 @@ func TestHandler(t *testing.T) {
 
 ## Structured logging
 
+Lambda function output log data to CloudWatch Logs by default. CloudWatch Logs and Insights that is rich CloudWatch Logs viewer supports JSON format logs. Therefore JSON formatted log is better for Lambda function.
+
+`golambda` provides `Logger` for JSON format logging. It has `With()` and `Set()` to add a pair of key and value to a log message. `Logger` has lambda request ID by default if you use the logger with `golambda.Start()`.
+
 ### Output with temporary variable
 
 ```go
@@ -136,11 +156,18 @@ golambda.Logger.Error("oops")
 - `INFO`
 - `ERROR`
 
-When occurring unrecoverable error, it should return as error to top level function in Lambda. Therefore `PANIC` and `FATAL` is not provided.
+Lambda function should return error to top level function when occurring unrecoverable error, should not exit suddenly. Therefore `PANIC` and `FATAL` is not provided according to the thought.
 
 ## Error handling
 
-`golambda.Error` can have pairs of key and value to know context of error. In `golambda.Start`, error log with key and value is output to CloudWatch as structured log when returned error is `golambda.Error`. Example is below.
+`golambda.Error` can have pairs of key and value to keep context of error. For example, `golambda.Error` can bring original string data when failed to unmarshal JSON. The string data can be extracted in caller function.
+
+Also, `golambda.Start` supports general error handling:
+
+1. Output error log with
+    - Pairs of key and value in `golambda.Error`
+    - Stack trace of error
+2. Send error record to sentry.io if `SENTRY_DSN` is set as environment variable
 
 ```go
 package main
@@ -176,9 +203,8 @@ Then, `golambda` output following log to CloudWatch.
         {
             "func": "github.com/m-mizutani/golambda.Start.func1",
             "file": "xxx/github.com/m-mizutani/golambda/lambda.go",
-            "line": 27
-        },
-		// -------- snip --------------
+            "line": 107
+        }
     ],
     "time": "2020-12-13T02:42:48Z",
     "message": "oops"
