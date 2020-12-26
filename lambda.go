@@ -2,6 +2,7 @@ package golambda
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
@@ -41,7 +42,8 @@ func Start(callback Callback) {
 				entry.With("error.sentryEventID", evID)
 			}
 
-			if e, ok := err.(*Error); ok {
+			var e *Error
+			if errors.As(err, &e) {
 				entry.With("error.values", e.Values())
 				entry.With("error.stacktrace", e.Stacks())
 			}
