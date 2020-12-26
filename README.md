@@ -170,6 +170,7 @@ Also, `golambda.Start` supports general error handling:
 2. Send error record to sentry.io if `SENTRY_DSN` is set as environment variable
     - Stack trace of `golambda.Error` is also available in sentry.io by compatibility with `github.com/pkg/errors`
     - Output event ID of sentry to log as `error.sentryEventID`
+	- You can set `SENTRY_ENV` and `SENTRY_RELEASE` also optionally.
 
 ```go
 package main

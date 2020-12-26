@@ -14,7 +14,9 @@ var sentryEnabled = false
 func initSentry() {
 	if dsn, ok := os.LookupEnv("SENTRY_DSN"); ok && dsn != "" {
 		err := sentry.Init(sentry.ClientOptions{
-			Dsn: dsn,
+			Dsn:         dsn,
+			Environment: os.Getenv("SENTRY_ENV"),
+			Release:     os.Getenv("SENTRY_RELEASE"),
 		})
 		if err != nil {
 			log.Fatalf("Failed sentry.Init: %+v", err)
