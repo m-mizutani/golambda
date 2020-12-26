@@ -179,6 +179,8 @@ func (x *Error) StackTrace() StackTrace {
 
 type frame uintptr
 type stack []uintptr
+
+// StackTrace is array of frame. It's exported for compatibility with github.com/pkg/errors
 type StackTrace []frame
 
 // pc returns the program counter for this frame;
