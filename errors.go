@@ -16,12 +16,14 @@ func NewError(msg string) *Error {
 }
 
 // WrapError creates a new Error and add message
-func WrapError(cause error, msg ...string) *Error {
+func WrapError(cause error, msg ...interface{}) *Error {
 	var err *Error
-	if len(msg) > 2 {
-		err = newError(fmt.Sprintf(msg[0], msg[1:]))
-	} else if len(msg) == 1 {
-		err = newError(msg[0])
+	if len(msg) > 0 {
+		var newMsgs []string
+		for _, m := range msg {
+			newMsgs = append(newMsgs, fmt.Sprintf("%v", m))
+		}
+		err = newError(strings.Join(newMsgs, " "))
 	} else {
 		err = newError("wrapped error")
 	}
