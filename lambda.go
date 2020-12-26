@@ -21,6 +21,8 @@ type Callback func(event Event) (interface{}, error)
 func Start(callback Callback) {
 	lambda.Start(func(ctx context.Context, origin interface{}) (interface{}, error) {
 		defer flushSentry()
+
+		initLogger()
 		Logger.With("event", origin).Info("Lambda start")
 
 		lc, _ := lambdacontext.FromContext(ctx)
