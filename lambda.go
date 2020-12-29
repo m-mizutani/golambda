@@ -24,10 +24,11 @@ func Start(callback Callback) {
 		defer flushSentry()
 
 		initLogger()
-		Logger.With("event", origin).Info("Lambda start")
 
 		lc, _ := lambdacontext.FromContext(ctx)
 		Logger.Set("lambda.requestID", lc.AwsRequestID)
+
+		Logger.With("event", origin).Info("Lambda start")
 
 		event := Event{
 			Ctx:    ctx,
