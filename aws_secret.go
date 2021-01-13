@@ -19,6 +19,30 @@ import (
 //         log.Fatal("Failed: ", err)
 //     }
 func GetSecretValues(secretArn string, values interface{}) error {
+	return GetSecretValuesWithFactory(secretArn, values, newDefaultSecretsManager)
+}
+
+func newDefaultSecretsManager(region string) (SecretsManagerClient, error) {
+	ssn, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return secretsmanager.New(ssn), nil
+}
+
+// SecretsManagerClient is wrapper of secretsmanager.SecretsManager
+type SecretsManagerClient interface {
+	GetSecretValue(*secretsmanager.GetSecretValueInput) (*secretsmanager.GetSecretValueOutput, error)
+}
+
+// SecretsManagerFactory is factory function type to replace SecretsManagerClient
+type SecretsManagerFactory func(region string) (SecretsManagerClient, error)
+
+// GetSecretValuesWithFactory can call SecretsManager.GetSecretValue with your SecretsManagerClient by factory
+func GetSecretValuesWithFactory(secretArn string, values interface{}, factory SecretsManagerFactory) error {
 	// sample: arn:aws:secretsmanager:ap-northeast-1:1234567890:secret:mytest
 	arn := strings.Split(secretArn, ":")
 	if len(arn) != 7 {
@@ -26,10 +50,10 @@ func GetSecretValues(secretArn string, values interface{}) error {
 	}
 	region := arn[3]
 
-	ssn := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	}))
-	mgr := secretsmanager.New(ssn)
+	mgr, err := factory(region)
+	if err != nil {
+		return WrapError(err).With("region", region)
+	}
 
 	result, err := mgr.GetSecretValue(&secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(secretArn),
@@ -38,7 +62,7 @@ func GetSecretValues(secretArn string, values interface{}) error {
 		return WrapError(err, "Fail to retrieve secret values").With("arn", secretArn)
 	}
 
-	if err := json.Unmarshal([]byte(*result.SecretString), &values); err != nil {
+	if err := json.Unmarshal([]byte(*result.SecretString), values); err != nil {
 		return WrapError(err, "Fail to parse secret values as JSON").
 			With("arn", secretArn).
 			With("GetSecretValue:result", result)
