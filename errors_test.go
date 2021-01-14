@@ -45,3 +45,12 @@ func TestStackTrace(t *testing.T) {
 	assert.Regexp(t, `/golambda/errors_test\.go$`, st[0].File)
 	assert.Equal(t, 13, st[0].Line)
 }
+
+func TestMultileWrap(t *testing.T) {
+	err1 := oops()
+	err2 := golambda.WrapError(err1)
+	assert.Equal(t, err1, err2)
+
+	err3 := golambda.WrapError(err1, "some message")
+	assert.NotEqual(t, err1, err3)
+}
