@@ -19,7 +19,7 @@ import (
 //         log.Fatal("Failed: ", err)
 //     }
 func GetSecretValues(secretArn string, values interface{}) error {
-	return GetSecretValuesWithFactory(secretArn, values, newDefaultSecretsManager)
+	return GetSecretValuesWithFactory(secretArn, values, nil)
 }
 
 func newDefaultSecretsManager(region string) (SecretsManagerClient, error) {
@@ -41,7 +41,7 @@ type SecretsManagerClient interface {
 // SecretsManagerFactory is factory function type to replace SecretsManagerClient
 type SecretsManagerFactory func(region string) (SecretsManagerClient, error)
 
-// GetSecretValuesWithFactory can call SecretsManager.GetSecretValue with your SecretsManagerClient by factory
+// GetSecretValuesWithFactory can call SecretsManager.GetSecretValue with your SecretsManagerClient by factory. It uses newDefaultSecretsManager if factory is nil
 func GetSecretValuesWithFactory(secretArn string, values interface{}, factory SecretsManagerFactory) error {
 	// sample: arn:aws:secretsmanager:ap-northeast-1:1234567890:secret:mytest
 	arn := strings.Split(secretArn, ":")
@@ -50,6 +50,9 @@ func GetSecretValuesWithFactory(secretArn string, values interface{}, factory Se
 	}
 	region := arn[3]
 
+	if factory == nil {
+		factory = newDefaultSecretsManager
+	}
 	mgr, err := factory(region)
 	if err != nil {
 		return WrapError(err).With("region", region)
