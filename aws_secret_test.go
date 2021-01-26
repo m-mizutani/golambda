@@ -26,17 +26,14 @@ func (x *dummySecretsManager) GetSecretValue(*secretsmanager.GetSecretValueInput
 
 func TestGetSecretWithFactory(t *testing.T) {
 	secretARN := "arn:aws:secretsmanager:us-east-0:1234567890:secret:mytest"
-	var dummy dummySecretsManager
+	mock, newMock := golambda.NewSecretsManagerMock()
+	mock.Secrets[secretARN] = `{"myth":"magic"}`
 
 	t.Run("can get secret values with custom SecretsManagerClient", func(t *testing.T) {
 		var result dummySecret
-		err := golambda.GetSecretValuesWithFactory(secretARN, &result, func(region string) (golambda.SecretsManagerClient, error) {
-			dummy.region = region
-			return &dummy, nil
-		})
-
+		err := golambda.GetSecretValuesWithFactory(secretARN, &result, newMock)
 		require.NoError(t, err)
-		assert.Equal(t, "us-east-0", dummy.region)
+		assert.Equal(t, "us-east-0", mock.Region)
 		assert.Equal(t, "magic", result.Myth)
 	})
 

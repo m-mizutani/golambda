@@ -2,6 +2,7 @@ package golambda
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -72,4 +73,35 @@ func GetSecretValuesWithFactory(secretArn string, values interface{}, factory Se
 	}
 
 	return nil
+}
+
+// SecretsManagerMock is mock of SecretsManagerClient for testing.
+type SecretsManagerMock struct {
+	Secrets map[string]string
+	Region  string
+	Input   []*secretsmanager.GetSecretValueInput
+}
+
+// GetSecretValue is mock method for SecretsManagerMock. It checks if the secretId (ARN) exists in SecretsManagerMock.Secrets as key. It returns a string value if extsting or ResourceNotFoundException error if not existing.
+func (x *SecretsManagerMock) GetSecretValue(input *secretsmanager.GetSecretValueInput) (*secretsmanager.GetSecretValueOutput, error) {
+	x.Input = append(x.Input, input)
+	value, ok := x.Secrets[*input.SecretId]
+	if !ok {
+		return nil, errors.New(secretsmanager.ErrCodeResourceNotFoundException)
+	}
+
+	return &secretsmanager.GetSecretValueOutput{
+		SecretString: aws.String(value),
+	}, nil
+}
+
+// NewSecretsManagerMock returns both of mock and factory method of the mock for testing. Developper can set secrets value as JSON to SecretsManagerMock.Secrets with key (secretes ARN). Also the mock stores Region that is extracted from secretArn and Input of secretsmanager.GetSecretValue when invoking GetSecretValuesWithFactory.
+func NewSecretsManagerMock() (*SecretsManagerMock, SecretsManagerFactory) {
+	mock := &SecretsManagerMock{
+		Secrets: make(map[string]string),
+	}
+	return mock, func(region string) (SecretsManagerClient, error) {
+		mock.Region = region
+		return mock, nil
+	}
 }
