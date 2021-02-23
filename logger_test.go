@@ -22,6 +22,8 @@ func TestLogger(t *testing.T) {
 		assert.Contains(t, buf.String(), "out/Debug")
 		logger.Info("out/Info")
 		assert.Contains(t, buf.String(), "out/Info")
+		logger.Warn("out/Warn")
+		assert.Contains(t, buf.String(), "out/Warn")
 		logger.Error("out/Error")
 		assert.Contains(t, buf.String(), "out/Error")
 	})
@@ -38,6 +40,8 @@ func TestLogger(t *testing.T) {
 		assert.Contains(t, buf.String(), "out/Debug")
 		logger.Info("out/Info")
 		assert.Contains(t, buf.String(), "out/Info")
+		logger.Warn("out/Warn")
+		assert.Contains(t, buf.String(), "out/Warn")
 		logger.Error("out/Error")
 		assert.Contains(t, buf.String(), "out/Error")
 	})
@@ -54,6 +58,26 @@ func TestLogger(t *testing.T) {
 		assert.NotContains(t, buf.String(), "out/Debug")
 		logger.Info("out/Info")
 		assert.Contains(t, buf.String(), "out/Info")
+		logger.Warn("out/Warn")
+		assert.Contains(t, buf.String(), "out/Warn")
+		logger.Error("out/Error")
+		assert.Contains(t, buf.String(), "out/Error")
+	})
+
+	t.Run("output warn level or more when set warn level", func(t *testing.T) {
+		buf := &bytes.Buffer{}
+		logger := &LambdaLogger{
+			zeroLogger: zerolog.New(buf).Level(zerolog.WarnLevel),
+		}
+
+		logger.Trace("out/Trace")
+		assert.NotContains(t, buf.String(), "out/Trace")
+		logger.Debug("out/Debug")
+		assert.NotContains(t, buf.String(), "out/Debug")
+		logger.Info("out/Info")
+		assert.NotContains(t, buf.String(), "out/Info")
+		logger.Warn("out/Warn")
+		assert.Contains(t, buf.String(), "out/Warn")
 		logger.Error("out/Error")
 		assert.Contains(t, buf.String(), "out/Error")
 	})
@@ -70,6 +94,8 @@ func TestLogger(t *testing.T) {
 		assert.NotContains(t, buf.String(), "out/Debug")
 		logger.Info("out/Info")
 		assert.NotContains(t, buf.String(), "out/Info")
+		logger.Warn("out/Warn")
+		assert.NotContains(t, buf.String(), "out/Warn")
 		logger.Error("out/Error")
 		assert.Contains(t, buf.String(), "out/Error")
 	})

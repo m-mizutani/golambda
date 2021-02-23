@@ -24,6 +24,8 @@ func NewLambdaLogger(logLevel string) *LambdaLogger {
 		zeroLogLevel = zerolog.DebugLevel
 	case "info":
 		zeroLogLevel = zerolog.InfoLevel
+	case "warn":
+		zeroLogLevel = zerolog.WarnLevel
 	case "error":
 		zeroLogLevel = zerolog.ErrorLevel
 	default:
@@ -64,6 +66,9 @@ func (x *LambdaLogger) Debug(msg string) { x.Entry().Debug(msg) }
 
 // Info output log as Info level message
 func (x *LambdaLogger) Info(msg string) { x.Entry().Info(msg) }
+
+// Warn output log as Warning level message
+func (x *LambdaLogger) Warn(msg string) { x.Entry().Warn(msg) }
 
 // Error output log as Error level message
 func (x *LambdaLogger) Error(msg string) { x.Entry().Error(msg) }
@@ -109,6 +114,13 @@ func (x *LogEntry) Debug(msg string) {
 // Info emits log message as info level.
 func (x *LogEntry) Info(msg string) {
 	ev := x.logger.zeroLogger.Info()
+	x.bind(ev)
+	ev.Msg(msg)
+}
+
+// Warn emits log message as Warn level.
+func (x *LogEntry) Warn(msg string) {
+	ev := x.logger.zeroLogger.Warn()
 	x.bind(ev)
 	ev.Msg(msg)
 }
