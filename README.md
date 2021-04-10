@@ -160,6 +160,8 @@ Lambda function should return error to top level function when occurring unrecov
 
 ## Error handling
 
+**NOTE: `golambda.Error` is obsoleted and use [github.com/m-mizutani/goerr](https://github.com/m-mizutani/goerr) instead.**
+
 `golambda.Error` can have pairs of key and value to keep context of error. For example, `golambda.Error` can bring original string data when failed to unmarshal JSON. The string data can be extracted in caller function.
 
 Also, `golambda.Start` supports general error handling:
@@ -182,7 +184,7 @@ import (
 // Handler is exported for test
 func Handler(event golambda.Event) (interface{}, error) {
 	trigger := "something wrong"
-	return nil, golambda.NewError("oops").With("trigger", trigger)
+	return nil, golambda.goerr.New("oops").With("trigger", trigger)
 }
 
 func main() {

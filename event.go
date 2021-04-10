@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/google/uuid"
+	"github.com/m-mizutani/goerr"
 )
 
 // Event provides lambda original event converting utilities
@@ -19,11 +20,11 @@ type Event struct {
 func (x *Event) Bind(v interface{}) error {
 	raw, err := json.Marshal(x.Origin)
 	if err != nil {
-		return WrapError(err, "Marshal original lambda event").With("originalEvent", x.Origin)
+		return goerr.Wrap(err, "Marshal original lambda event").With("originalEvent", x.Origin)
 	}
 
 	if err := json.Unmarshal(raw, v); err != nil {
-		return WrapError(err, "Unmarshal to v").With("raw", string(raw))
+		return goerr.Wrap(err, "Unmarshal to v").With("raw", string(raw))
 	}
 
 	return nil
@@ -35,7 +36,7 @@ type EventRecord []byte
 // Bind unmarshal event record to object
 func (x EventRecord) Bind(ev interface{}) error {
 	if err := json.Unmarshal(x, ev); err != nil {
-		return WrapError(err, "Failed json.Unmarshal in DecodeEvent").With("raw", string(x))
+		return goerr.Wrap(err, "Failed json.Unmarshal in DecodeEvent").With("raw", string(x))
 	}
 	return nil
 }
@@ -61,7 +62,7 @@ func (x *Event) DecapSQSBody() ([]EventRecord, error) {
 	}
 
 	if len(output) == 0 {
-		return nil, NewError("No SQS event records")
+		return nil, goerr.New("No SQS event records")
 	}
 
 	return output, nil
@@ -111,7 +112,7 @@ func encapSQSMessage(v interface{}) ([]events.SQSMessage, error) {
 	default:
 		raw, err := json.Marshal(v)
 		if err != nil {
-			return nil, WrapError(err, "Failed to marshal v")
+			return nil, goerr.Wrap(err, "Failed to marshal v")
 		}
 		return []events.SQSMessage{
 			{
@@ -130,14 +131,14 @@ func (x *Event) DecapSNSonSQSMessage() ([]EventRecord, error) {
 	}
 
 	if len(sqsEvent.Records) == 0 {
-		return nil, NewError("No SQS event records")
+		return nil, goerr.New("No SQS event records")
 	}
 
 	var output []EventRecord
 	for _, record := range sqsEvent.Records {
 		var snsEntity events.SNSEntity
 		if err := json.Unmarshal([]byte(record.Body), &snsEntity); err != nil {
-			return nil, WrapError(err, "Failed to unmarshal SNS entity in SQS msg").With("body", record.Body)
+			return nil, goerr.Wrap(err, "Failed to unmarshal SNS entity in SQS msg").With("body", record.Body)
 		}
 
 		output = append(output, EventRecord(snsEntity.Message))
@@ -179,7 +180,7 @@ func (x *Event) DecapSNSMessage() ([]EventRecord, error) {
 	}
 
 	if len(snsEvent.Records) == 0 {
-		return nil, NewError("No SNS event records")
+		return nil, goerr.New("No SNS event records")
 	}
 
 	var output []EventRecord
@@ -242,7 +243,7 @@ func encapSNSEntity(v interface{}) ([]events.SNSEntity, error) {
 	default:
 		raw, err := json.Marshal(v)
 		if err != nil {
-			return nil, WrapError(err, "Failed to marshal v")
+			return nil, goerr.Wrap(err, "Failed to marshal v")
 		}
 		return []events.SNSEntity{
 			{

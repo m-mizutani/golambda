@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/m-mizutani/goerr"
 )
 
 // Callback is callback function type of golambda.Start().
@@ -43,6 +44,12 @@ func Start(callback Callback) {
 				entry.With("error.sentryEventID", evID)
 			}
 
+			var goErr *goerr.Error
+			if errors.As(err, &goErr) {
+				entry.With("error.values", goErr.Values())
+				entry.With("error.stacktrace", goErr.Stacks())
+			}
+			// For backward compatibility
 			var e *Error
 			if errors.As(err, &e) {
 				entry.With("error.values", e.Values())

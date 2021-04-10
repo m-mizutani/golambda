@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/m-mizutani/goerr"
 )
 
 // GetSecretValues bind secret data of AWS Secrets Manager to values. values should be set as pointer of struct with json meta tag.
@@ -47,7 +48,7 @@ func GetSecretValuesWithFactory(secretArn string, values interface{}, factory Se
 	// sample: arn:aws:secretsmanager:ap-northeast-1:1234567890:secret:mytest
 	arn := strings.Split(secretArn, ":")
 	if len(arn) != 7 {
-		return NewError("Invalid SecretsManager ARN format").With("arn", secretArn)
+		return goerr.New("Invalid SecretsManager ARN format").With("arn", secretArn)
 	}
 	region := arn[3]
 
@@ -56,18 +57,18 @@ func GetSecretValuesWithFactory(secretArn string, values interface{}, factory Se
 	}
 	mgr, err := factory(region)
 	if err != nil {
-		return WrapError(err).With("region", region)
+		return goerr.Wrap(err).With("region", region)
 	}
 
 	result, err := mgr.GetSecretValue(&secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(secretArn),
 	})
 	if err != nil {
-		return WrapError(err, "Fail to retrieve secret values").With("arn", secretArn)
+		return goerr.Wrap(err, "Fail to retrieve secret values").With("arn", secretArn)
 	}
 
 	if err := json.Unmarshal([]byte(*result.SecretString), values); err != nil {
-		return WrapError(err, "Fail to parse secret values as JSON").
+		return goerr.Wrap(err, "Fail to parse secret values as JSON").
 			With("arn", secretArn).
 			With("GetSecretValue:result", result)
 	}

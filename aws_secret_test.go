@@ -4,24 +4,14 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/m-mizutani/goerr"
 	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type dummySecretsManager struct {
-	region string
-}
 type dummySecret struct {
 	Myth string `json:"myth"`
-}
-
-func (x *dummySecretsManager) GetSecretValue(*secretsmanager.GetSecretValueInput) (*secretsmanager.GetSecretValueOutput, error) {
-	return &secretsmanager.GetSecretValueOutput{
-		SecretString: aws.String(`{"myth":"magic"}`),
-	}, nil
 }
 
 func TestGetSecretWithFactory(t *testing.T) {
@@ -39,7 +29,7 @@ func TestGetSecretWithFactory(t *testing.T) {
 
 	t.Run("fail when SecretsManagerFactory returns error", func(t *testing.T) {
 		var result dummySecret
-		newErr := golambda.NewError("something wrong")
+		newErr := goerr.New("something wrong")
 		err := golambda.GetSecretValuesWithFactory(secretARN, &result, func(region string) (golambda.SecretsManagerClient, error) {
 			return nil, newErr
 		})
