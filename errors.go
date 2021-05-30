@@ -1,14 +1,39 @@
 package golambda
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"path"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/m-mizutani/goerr"
 	// use pkg/errors to generate stacktrace
 )
+
+func EmitError(err error) {
+	entry := Logger.Entry()
+
+	if evID := emitSentry(err); evID != "" {
+		entry.With("error.sentryEventID", evID)
+	}
+
+	var goErr *goerr.Error
+	if errors.As(err, &goErr) {
+		entry.With("error.values", goErr.Values())
+		entry.With("error.stacktrace", goErr.Stacks())
+	}
+	// For backward compatibility
+	var e *Error
+	if errors.As(err, &e) {
+		entry.With("error.values", e.Values())
+		entry.With("error.stacktrace", e.Stacks())
+	}
+
+	entry.Error(err.Error())
+}
 
 // NewError creates a new error with message
 func NewError(msg string) *Error {
