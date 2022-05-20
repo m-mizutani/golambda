@@ -12,20 +12,18 @@ import (
 
 func TestDecapSQSBody(t *testing.T) {
 	t.Run("can make SQSEvent to EventRecord", func(t *testing.T) {
-		v := &golambda.Event{
-			Origin: events.SQSEvent{
-				Records: []events.SQSMessage{
-					{
-						MessageId: "t1",
-						Body:      "blue",
-					},
-					{
-						MessageId: "t2",
-						Body:      "orange",
-					},
+		v := golambda.NewEvent(nil, events.SQSEvent{
+			Records: []events.SQSMessage{
+				{
+					MessageId: "t1",
+					Body:      "blue",
+				},
+				{
+					MessageId: "t2",
+					Body:      "orange",
 				},
 			},
-		}
+		})
 		events, err := v.DecapSQSBody()
 
 		require.NoError(t, err)
@@ -35,9 +33,7 @@ func TestDecapSQSBody(t *testing.T) {
 	})
 
 	t.Run("fail when no SQS event", func(t *testing.T) {
-		v := &golambda.Event{
-			Origin: events.SQSEvent{},
-		}
+		v := golambda.NewEvent(nil, events.SQSEvent{})
 		events, err := v.DecapSQSBody()
 
 		require.Error(t, err)
@@ -45,22 +41,21 @@ func TestDecapSQSBody(t *testing.T) {
 	})
 
 	t.Run("fail with SNS event", func(t *testing.T) {
-		v := &golambda.Event{
-			Origin: events.SNSEvent{
-				Records: []events.SNSEventRecord{
-					{
-						SNS: events.SNSEntity{
-							Message: "blue",
-						},
+		v := golambda.NewEvent(nil, events.SNSEvent{
+			Records: []events.SNSEventRecord{
+				{
+					SNS: events.SNSEntity{
+						Message: "blue",
 					},
-					{
-						SNS: events.SNSEntity{
-							Message: "orange",
-						},
+				},
+				{
+					SNS: events.SNSEntity{
+						Message: "orange",
 					},
 				},
 			},
-		}
+		})
+
 		events, err := v.DecapSQSBody()
 
 		require.Error(t, err)

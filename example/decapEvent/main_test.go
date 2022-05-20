@@ -21,7 +21,7 @@ func TestHandler(t *testing.T) {
 	}
 	require.NoError(t, event.EncapSQS(messages))
 
-	resp, err := main.Handler(event)
+	resp, err := main.Handler(&event)
 	require.NoError(t, err)
 	require.Equal(t, "blue:orange", resp)
 }

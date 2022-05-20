@@ -12,15 +12,15 @@ import (
 
 // Event provides lambda original event converting utilities
 type Event struct {
-	Ctx    context.Context
-	Origin interface{}
+	ctx    context.Context
+	origin interface{}
 }
 
 // Bind does json.Marshal original event and json.Unmarshal to v
 func (x *Event) Bind(v interface{}) error {
-	raw, err := json.Marshal(x.Origin)
+	raw, err := json.Marshal(x.origin)
 	if err != nil {
-		return goerr.Wrap(err, "Marshal original lambda event").With("originalEvent", x.Origin)
+		return goerr.Wrap(err, "Marshal original lambda event").With("originalEvent", x.origin)
 	}
 
 	if err := json.Unmarshal(raw, v); err != nil {
@@ -28,6 +28,13 @@ func (x *Event) Bind(v interface{}) error {
 	}
 
 	return nil
+}
+
+func NewEvent(ctx context.Context, ev interface{}) *Event {
+	return &Event{
+		ctx:    ctx,
+		origin: ev,
+	}
 }
 
 // EventRecord is decapsulate event data (e.g. Body of SQS event)
@@ -79,7 +86,7 @@ func (x *Event) EncapSQS(v interface{}) error {
 		return err
 	}
 
-	x.Origin = events.SQSEvent{
+	x.origin = events.SQSEvent{
 		Records: messages,
 	}
 	return nil
@@ -165,7 +172,7 @@ func (x *Event) EncapSNSonSQSMessage(v interface{}) error {
 		return err
 	}
 
-	x.Origin = events.SQSEvent{
+	x.origin = events.SQSEvent{
 		Records: sqsMessages,
 	}
 
@@ -209,7 +216,7 @@ func (x *Event) EncapSNS(v interface{}) error {
 		})
 	}
 
-	x.Origin = events.SNSEvent{
+	x.origin = events.SNSEvent{
 		Records: snsRecords,
 	}
 
