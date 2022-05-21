@@ -15,7 +15,7 @@ import (
 // 1) Extract stack trace of error if err is golambda.Error
 // 2) Send error record to sentry.io if SENTRY_DSN is set as environment variable
 // 3) Output error log
-type Callback[T any] func(event *Event) (T, error)
+type Callback[T any] func(ctx context.Context, event *Event) (T, error)
 
 // Start sets up Arguments and logging tools, then invoke Callback with Arguments. When exiting, it also does error handling if Callback returns error
 func Start[T any](callback Callback[T]) {
@@ -28,9 +28,9 @@ func Start[T any](callback Callback[T]) {
 
 		Logger.With("input", origin).Info("Starting Lambda")
 
-		event := NewEvent(ctx, origin)
+		event := NewEvent(origin)
 
-		resp, err := callback(event)
+		resp, err := callback(ctx, event)
 		if err != nil {
 			HandleError(err)
 			return nil, err

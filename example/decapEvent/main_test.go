@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/m-mizutani/golambda"
@@ -10,7 +11,6 @@ import (
 )
 
 func TestHandler(t *testing.T) {
-	var event golambda.Event
 	messages := []main.MyEvent{
 		{
 			Message: "blue",
@@ -19,9 +19,10 @@ func TestHandler(t *testing.T) {
 			Message: "orange",
 		},
 	}
-	require.NoError(t, event.EncapSQS(messages))
+	event, err := golambda.NewSQSEvent(messages)
+	require.NoError(t, err)
 
-	resp, err := main.Handler(&event)
+	resp, err := main.Handler(context.Background(), event)
 	require.NoError(t, err)
 	require.Equal(t, "blue:orange", resp)
 }

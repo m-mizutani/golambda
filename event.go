@@ -1,7 +1,6 @@
 package golambda
 
 import (
-	"context"
 	"encoding/json"
 	"reflect"
 
@@ -12,27 +11,26 @@ import (
 
 // Event provides lambda original event converting utilities
 type Event struct {
-	ctx    context.Context
-	origin interface{}
+	origin any
 }
 
-// Bind does json.Marshal original event and json.Unmarshal to v
-func (x *Event) Bind(v interface{}) error {
+// Bind does json.Marshal original event and json.Unmarshal to v. If failed, return error with ErrInvalidEventData.
+func (x *Event) Bind(v any) error {
 	raw, err := json.Marshal(x.origin)
 	if err != nil {
-		return goerr.Wrap(err, "Marshal original lambda event").With("originalEvent", x.origin)
+		return ErrFailedDecodeEvent.Wrap(err).With("origin", x.origin)
 	}
 
 	if err := json.Unmarshal(raw, v); err != nil {
-		return goerr.Wrap(err, "Unmarshal to v").With("raw", string(raw))
+		return ErrFailedDecodeEvent.Wrap(err).With("marshaled", string(raw))
 	}
 
 	return nil
 }
 
-func NewEvent(ctx context.Context, ev interface{}) *Event {
+// NewEvent provides a new event with original data.
+func NewEvent(ev any) *Event {
 	return &Event{
-		ctx:    ctx,
 		origin: ev,
 	}
 }
@@ -40,10 +38,10 @@ func NewEvent(ctx context.Context, ev interface{}) *Event {
 // EventRecord is decapsulate event data (e.g. Body of SQS event)
 type EventRecord []byte
 
-// Bind unmarshal event record to object
-func (x EventRecord) Bind(ev interface{}) error {
+// Bind unmarshal event record to object. If failed, return error with ErrInvalidEventData.
+func (x EventRecord) Bind(ev any) error {
 	if err := json.Unmarshal(x, ev); err != nil {
-		return goerr.Wrap(err, "Failed json.Unmarshal in DecodeEvent").With("raw", string(x))
+		return ErrFailedDecodeEvent.Wrap(err).With("raw", string(x))
 	}
 	return nil
 }
@@ -53,8 +51,8 @@ func (x EventRecord) String() string {
 	return string(x)
 }
 
-// DecapSQSBody decapsulate wrapped body data in SQSEvent
-func (x *Event) DecapSQSBody() ([]EventRecord, error) {
+// DecapSQS decapsulate wrapped body data in SQSEvent. If no SQS records, it returns ErrNoEventData.
+func (x *Event) DecapSQS() ([]EventRecord, error) {
 	var sqsEvent events.SQSEvent
 	if err := x.Bind(&sqsEvent); err != nil {
 		return nil, err
@@ -69,30 +67,78 @@ func (x *Event) DecapSQSBody() ([]EventRecord, error) {
 	}
 
 	if len(output) == 0 {
-		return nil, goerr.New("No SQS event records")
+		return nil, goerr.Wrap(ErrNoEventData, "no SQS event records")
 	}
 
 	return output, nil
 }
 
-// EncapSQS sets v as SQSEvent body. This function overwrite Origin for testing.
-// EncapSQS allows both of one record and multiple record as slice or array
-// e.g.)
-//   ev.EncapSQS("red") -> one SQSMessage in SQSEvent
-//   ev.EncapSQS([]string{"blue", "orange"}) -> two SQSMessage in SQSEvent
-func (x *Event) EncapSQS(v interface{}) error {
-	messages, err := encapSQSMessage(v)
-	if err != nil {
-		return err
+// DecapSNS decapsulate wrapped body data in SNSEvent. If no SQS records, it returns ErrNoEventData.
+func (x *Event) DecapSNS() ([]EventRecord, error) {
+	var snsEvent events.SNSEvent
+	if err := x.Bind(&snsEvent); err != nil {
+		return nil, err
 	}
 
-	x.origin = events.SQSEvent{
-		Records: messages,
+	if len(snsEvent.Records) == 0 {
+		return nil, goerr.Wrap(ErrNoEventData, "no SNS event records")
 	}
-	return nil
+
+	var output []EventRecord
+	for _, record := range snsEvent.Records {
+		output = append(output, EventRecord(record.SNS.Message))
+	}
+
+	return output, nil
 }
 
-func encapSQSMessage(v interface{}) ([]events.SQSMessage, error) {
+// DecapSNSoverSQS decapsulate wrapped body data to in SNSEntity over SQSEvent. If no SQS records, it returns ErrNoEventData.
+func (x *Event) DecapSNSoverSQS() ([]EventRecord, error) {
+	var sqsEvent events.SQSEvent
+	if err := x.Bind(&sqsEvent); err != nil {
+		return nil, err
+	}
+
+	if len(sqsEvent.Records) == 0 {
+		return nil, goerr.Wrap(ErrNoEventData, "no SQS event records")
+	}
+
+	var output []EventRecord
+	for _, record := range sqsEvent.Records {
+		var snsEntity events.SNSEntity
+		if err := json.Unmarshal([]byte(record.Body), &snsEntity); err != nil {
+			return nil, goerr.Wrap(err, "Failed to unmarshal SNS entity in SQS msg").With("body", record.Body)
+		}
+
+		output = append(output, EventRecord(snsEntity.Message))
+	}
+
+	if len(output) == 0 {
+		return nil, goerr.Wrap(ErrNoEventData, "no SNS event records")
+	}
+
+	return output, nil
+}
+
+// NewSQSEvent sets v as SQSEvent body. This function overwrite Origin for testing.
+// NewSQSEvent allows both of one record and multiple record as slice or array
+// e.g.)
+//   ev.NewSQSEvent("red") -> one SQSMessage in SQSEvent
+//   ev.NewSQSEvent([]string{"blue", "orange"}) -> two SQSMessage in SQSEvent
+func NewSQSEvent(v any) (*Event, error) {
+	messages, err := encapSQSMessage(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Event{
+		origin: events.SQSEvent{
+			Records: messages,
+		},
+	}, nil
+}
+
+func encapSQSMessage(v any) ([]events.SQSMessage, error) {
 	value := reflect.ValueOf(v)
 
 	switch value.Kind() {
@@ -130,38 +176,14 @@ func encapSQSMessage(v interface{}) ([]events.SQSMessage, error) {
 	}
 }
 
-// DecapSNSonSQSMessage decapsulate wrapped body data to in SNSEntity over SQSEvent
-func (x *Event) DecapSNSonSQSMessage() ([]EventRecord, error) {
-	var sqsEvent events.SQSEvent
-	if err := x.Bind(&sqsEvent); err != nil {
-		return nil, err
-	}
-
-	if len(sqsEvent.Records) == 0 {
-		return nil, goerr.New("No SQS event records")
-	}
-
-	var output []EventRecord
-	for _, record := range sqsEvent.Records {
-		var snsEntity events.SNSEntity
-		if err := json.Unmarshal([]byte(record.Body), &snsEntity); err != nil {
-			return nil, goerr.Wrap(err, "Failed to unmarshal SNS entity in SQS msg").With("body", record.Body)
-		}
-
-		output = append(output, EventRecord(snsEntity.Message))
-	}
-
-	return output, nil
-}
-
-// EncapSNSonSQSMessage sets v as SNS entity over SQS. This function overwrite Origin and should be used for testing.
-// EncapSNSonSQSMessage allows both of one record and multiple record as slice or array
+// NewSNSonSQSEvent sets v as SNS entity over SQS. This function overwrite Origin and should be used for testing.
+// NewSNSonSQSEvent allows both of one record and multiple record as slice or array
 //
 // e.g.)
 //
-//     ev.EncapSNSonSQSMessage("red") // -> one SQS message on one SQS event
-//     ev.EncapSNSonSQSMessage([]string{"blue", "orange"}) // -> two SQS message on one SQS event
-func (x *Event) EncapSNSonSQSMessage(v interface{}) error {
+//     ev.NewSNSonSQSEvent("red") // -> one SQS message on one SQS event
+//     ev.NewSNSonSQSEvent([]string{"blue", "orange"}) // -> two SQS message on one SQS event
+func (x *Event) NewSNSonSQSEvent(v any) error {
 	snsEntities, err := encapSNSEntity(v)
 	if err != nil {
 		return err
@@ -179,31 +201,12 @@ func (x *Event) EncapSNSonSQSMessage(v interface{}) error {
 	return nil
 }
 
-// DecapSNSMessage decapsulate wrapped body data in SNSEvent
-func (x *Event) DecapSNSMessage() ([]EventRecord, error) {
-	var snsEvent events.SNSEvent
-	if err := x.Bind(&snsEvent); err != nil {
-		return nil, err
-	}
-
-	if len(snsEvent.Records) == 0 {
-		return nil, goerr.New("No SNS event records")
-	}
-
-	var output []EventRecord
-	for _, record := range snsEvent.Records {
-		output = append(output, EventRecord(record.SNS.Message))
-	}
-
-	return output, nil
-}
-
-// EncapSNS sets v as SNS entity. This function overwrite Origin for testing.
-// EncapSNS allows both of one record and multiple record as slice or array
+// NewSNSEvent sets v as SNS entity. This function overwrite Origin for testing.
+// NewSNSEvent allows both of one record and multiple record as slice or array
 // e.g.)
-// ev.EncapSNS("red") -> one SNS entity in SNSEvent
-// ev.EncapSNS([]string{"blue", "orange"}) -> two SNS entity in SNSEvent
-func (x *Event) EncapSNS(v interface{}) error {
+// ev.NewSNSEvent("red") -> one SNS entity in SNSEvent
+// ev.NewSNSEvent([]string{"blue", "orange"}) -> two SNS entity in SNSEvent
+func (x *Event) NewSNSEvent(v any) error {
 	entities, err := encapSNSEntity(v)
 	if err != nil {
 		return err
@@ -223,7 +226,7 @@ func (x *Event) EncapSNS(v interface{}) error {
 	return nil
 }
 
-func encapSNSEntity(v interface{}) ([]events.SNSEntity, error) {
+func encapSNSEntity(v any) ([]events.SNSEntity, error) {
 	value := reflect.ValueOf(v)
 
 	switch value.Kind() {

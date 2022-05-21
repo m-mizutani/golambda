@@ -29,7 +29,7 @@ func newDefaultSecretsManager(region string) (SecretsManagerClient, error) {
 		Region: aws.String(region),
 	})
 	if err != nil {
-		return nil, err
+		return nil, goerr.Wrap(err)
 	}
 
 	return secretsmanager.New(ssn), nil
@@ -48,7 +48,7 @@ func GetSecretValuesWithFactory(secretArn string, values interface{}, factory Se
 	// sample: arn:aws:secretsmanager:ap-northeast-1:1234567890:secret:mytest
 	arn := strings.Split(secretArn, ":")
 	if len(arn) != 7 {
-		return goerr.New("Invalid SecretsManager ARN format").With("arn", secretArn)
+		return goerr.Wrap(ErrInvalidARN).With("arn", secretArn)
 	}
 	region := arn[3]
 
@@ -64,11 +64,11 @@ func GetSecretValuesWithFactory(secretArn string, values interface{}, factory Se
 		SecretId: aws.String(secretArn),
 	})
 	if err != nil {
-		return goerr.Wrap(err, "Fail to retrieve secret values").With("arn", secretArn)
+		return ErrFailedSecretsManager.Wrap(err).With("arn", secretArn)
 	}
 
 	if err := json.Unmarshal([]byte(*result.SecretString), values); err != nil {
-		return goerr.Wrap(err, "Fail to parse secret values as JSON").
+		return ErrFailedDecodeSecret.Wrap(err).
 			With("arn", secretArn).
 			With("GetSecretValue:result", result)
 	}
@@ -83,7 +83,7 @@ type SecretsManagerMock struct {
 	Input   []*secretsmanager.GetSecretValueInput
 }
 
-// GetSecretValue is mock method for SecretsManagerMock. It checks if the secretId (ARN) exists in SecretsManagerMock.Secrets as key. It returns a string value if extsting or ResourceNotFoundException error if not existing.
+// GetSecretValue is mock method for SecretsManagerMock. It checks if the secretId (ARN) exists in SecretsManagerMock.Secrets as key. It returns a string value if existing or ResourceNotFoundException error if not existing.
 func (x *SecretsManagerMock) GetSecretValue(input *secretsmanager.GetSecretValueInput) (*secretsmanager.GetSecretValueOutput, error) {
 	x.Input = append(x.Input, input)
 	value, ok := x.Secrets[*input.SecretId]
@@ -96,7 +96,7 @@ func (x *SecretsManagerMock) GetSecretValue(input *secretsmanager.GetSecretValue
 	}, nil
 }
 
-// NewSecretsManagerMock returns both of mock and factory method of the mock for testing. Developper can set secrets value as JSON to SecretsManagerMock.Secrets with key (secretes ARN). Also the mock stores Region that is extracted from secretArn and Input of secretsmanager.GetSecretValue when invoking GetSecretValuesWithFactory.
+// NewSecretsManagerMock returns both of mock and factory method of the mock for testing. Developer can set secrets value as JSON to SecretsManagerMock.Secrets with key (secretes ARN). Also the mock stores Region that is extracted from secretArn and Input of secretsmanager.GetSecretValue when invoking GetSecretValuesWithFactory.
 func NewSecretsManagerMock() (*SecretsManagerMock, SecretsManagerFactory) {
 	mock := &SecretsManagerMock{
 		Secrets: make(map[string]string),

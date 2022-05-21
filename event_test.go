@@ -10,9 +10,9 @@ import (
 	"github.com/m-mizutani/golambda"
 )
 
-func TestDecapSQSBody(t *testing.T) {
+func TestDecapSQS(t *testing.T) {
 	t.Run("can make SQSEvent to EventRecord", func(t *testing.T) {
-		v := golambda.NewEvent(nil, events.SQSEvent{
+		v := golambda.NewEvent(events.SQSEvent{
 			Records: []events.SQSMessage{
 				{
 					MessageId: "t1",
@@ -24,7 +24,7 @@ func TestDecapSQSBody(t *testing.T) {
 				},
 			},
 		})
-		events, err := v.DecapSQSBody()
+		events, err := v.DecapSQS()
 
 		require.NoError(t, err)
 		require.Equal(t, 2, len(events))
@@ -33,15 +33,15 @@ func TestDecapSQSBody(t *testing.T) {
 	})
 
 	t.Run("fail when no SQS event", func(t *testing.T) {
-		v := golambda.NewEvent(nil, events.SQSEvent{})
-		events, err := v.DecapSQSBody()
+		v := golambda.NewEvent(events.SQSEvent{})
+		events, err := v.DecapSQS()
 
 		require.Error(t, err)
 		assert.Nil(t, events)
 	})
 
 	t.Run("fail with SNS event", func(t *testing.T) {
-		v := golambda.NewEvent(nil, events.SNSEvent{
+		v := golambda.NewEvent(events.SNSEvent{
 			Records: []events.SNSEventRecord{
 				{
 					SNS: events.SNSEntity{
@@ -56,7 +56,7 @@ func TestDecapSQSBody(t *testing.T) {
 			},
 		})
 
-		events, err := v.DecapSQSBody()
+		events, err := v.DecapSQS()
 
 		require.Error(t, err)
 		assert.Nil(t, events)
