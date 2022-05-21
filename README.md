@@ -1,4 +1,5 @@
-# golambda [![Travis-CI](https://travis-ci.com/m-mizutani/golambda.svg)](https://travis-ci.org/m-mizutani/golambda) [![Report card](https://goreportcard.com/badge/github.com/m-mizutani/golambda)](https://goreportcard.com/report/github.com/m-mizutani/golambda) [![Go Reference](https://pkg.go.dev/badge/github.com/m-mizutani/golambda.svg)](https://pkg.go.dev/github.com/m-mizutani/golambda)
+# golambda [![test](https://github.com/m-mizutani/golambda/actions/workflows/test.yml/badge.svg)](https://github.com/m-mizutani/golambda/actions/workflows/test.yml) [![gosec](https://github.com/m-mizutani/golambda/actions/workflows/gosec.yml/badge.svg)](https://github.com/m-mizutani/golambda/actions/workflows/gosec.yml) [![trivy](https://github.com/m-mizutani/golambda/actions/workflows/trivy.yml/badge.svg)](https://github.com/m-mizutani/golambda/actions/workflows/trivy.yml) [![Report card](https://goreportcard.com/badge/github.com/m-mizutani/golambda)](https://goreportcard.com/report/github.com/m-mizutani/golambda) [![Go Reference](https://pkg.go.dev/badge/github.com/m-mizutani/golambda.svg)](https://pkg.go.dev/github.com/m-mizutani/golambda)
+
 
 A suite of Go utilities for AWS Lambda functions to ease adopting best practices.
 
@@ -23,9 +24,9 @@ $ go get github.com/m-mizutani/golambda
 
 Lambda function can have event source(s) such as SQS, SNS, etc. The main data is encapsulated in their data structure. `golambda` provides not only decapsulation feature for Lambda execution but also encapsulation feature for testing. Following event sources are supported for now.
 
-- SQS body: `DecapSQSBody`
-- SNS message: `DecapSNSMessage`
-- SNS message over SQS: `DecapSNSonSQSMessage`
+- SQS body: `DecapSQS`
+- SNS message: `DecapSNS`
+- SNS message over SQS: `DecapSNSoverSQS`
 
 ### Lambda implementation
 
@@ -43,23 +44,21 @@ type MyEvent struct {
 	Message string `json:"message"`
 }
 
-// Handler is sample function. The function concatenates all message in SQS body and returns it.
-func Handler(event golambda.Event) (interface{}, error) {
-	// Decapsulate body message(s) in SQS Event structure.
-	// It can also handles multiple SQS records.
-	events, err := event.DecapSQSBody()
+// Handler is exported for test
+func Handler(ctx context.Context, event *golambda.Event) (string, error) {
+	// Decapsulate body message(s) in SQS Event structure
+	events, err := event.DecapSQS()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var response []string
-
 	// Iterate body message(S)
 	for _, ev := range events {
 		var msg MyEvent
 		// Unmarshal golambda.Event to MyEvent
 		if err := ev.Bind(&msg); err != nil {
-			return nil, err
+			return "", err
 		}
 
 		// Do something
@@ -89,7 +88,6 @@ import (
 )
 
 func TestHandler(t *testing.T) {
-	var event golambda.Event
 	messages := []main.MyEvent{
 		{
 			Message: "blue",
@@ -98,7 +96,8 @@ func TestHandler(t *testing.T) {
 			Message: "orange",
 		},
 	}
-	require.NoError(t, event.EncapSQS(messages))
+	event, err := golambda.NewSQSEvent(messages)
+	require.NoError(t, err)
 
 	resp, err := main.Handler(event)
 	require.NoError(t, err)
@@ -110,7 +109,7 @@ func TestHandler(t *testing.T) {
 
 Lambda function output log data to CloudWatch Logs by default. CloudWatch Logs and Insights that is rich CloudWatch Logs viewer supports JSON format logs. Therefore JSON formatted log is better for Lambda function.
 
-`golambda` provides `Logger` for JSON format logging. It has `With()` and `Set()` to add a pair of key and value to a log message. `Logger` has lambda request ID by default if you use the logger with `golambda.Start()`.
+`golambda` provides `Logger` for JSON format logging. It has `With()` to add a pair of key and value to a log message. `Logger` has lambda request ID by default if you use the logger with `golambda.Start()`. `Logger` is provided as [zlog.Logger](https://github.com/m-mizutani/zlog). `RenewLogger()` allows you to reconfigure logging setting.
 
 ### Output with temporary variable
 
@@ -128,25 +127,6 @@ golambda.Logger.With("var1", v1).Info("Hello, hello, hello")
 */
 ```
 
-### Set permanent variable to logger
-
-```go
-golambda.Logger.Set("myRequestID", myRequestID)
-
-// ~~~~~~~ snip ~~~~~~
-
-golambda.Logger.Error("oops")
-/* Output:
-{
-	"level": "error",
-	"lambda.requestID": "565389dc-c13f-4fc0-b113-xxxxxxxxxxxx",
-	"time": "2020-11-12T02:44:30Z",
-	"myRequestID": "xxxxxxxxxxxxxxxxx",
-	"message": "oops"
-}
-*/
-```
-
 ### Log level
 
 `golambda.Logger` (`golambda.LambdaLogger` type) provides following log level. Log level can be configured by environment variable `LOG_LEVEL`.
@@ -154,6 +134,7 @@ golambda.Logger.Error("oops")
 - `TRACE`
 - `DEBUG`
 - `INFO`
+- `WARN`
 - `ERROR`
 
 Lambda function should return error to top level function when occurring unrecoverable error, should not exit suddenly. Therefore `PANIC` and `FATAL` is not provided according to the thought.
@@ -167,7 +148,7 @@ Lambda function should return error to top level function when occurring unrecov
 Also, `golambda.Start` supports general error handling:
 
 1. Output error log with
-    - Pairs of key and value in `golambda.Error` as `error.values`
+    - Pairs of key and value in `goerr.Error` of [goerr](https://github.com/m-mizutani/goerr) as `error.values`
     - Stack trace of error as `error.stacktrace`
 2. Send error record to sentry.io if `SENTRY_DSN` is set as environment variable
     - Stack trace of `golambda.Error` is also available in sentry.io by compatibility with `github.com/pkg/errors`
@@ -184,7 +165,7 @@ import (
 // Handler is exported for test
 func Handler(event golambda.Event) (interface{}, error) {
 	trigger := "something wrong"
-	return nil, golambda.goerr.New("oops").With("trigger", trigger)
+	return nil, goerr.New("oops").With("trigger", trigger)
 }
 
 func main() {

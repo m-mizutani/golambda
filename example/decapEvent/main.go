@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"strings"
 
 	"github.com/m-mizutani/golambda"
@@ -12,11 +13,11 @@ type MyEvent struct {
 }
 
 // Handler is exported for test
-func Handler(event golambda.Event) (interface{}, error) {
+func Handler(ctx context.Context, event *golambda.Event) (string, error) {
 	// Decapsulate body message(s) in SQS Event structure
-	events, err := event.DecapSQSBody()
+	events, err := event.DecapSQS()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var response []string
@@ -25,7 +26,7 @@ func Handler(event golambda.Event) (interface{}, error) {
 		var msg MyEvent
 		// Unmarshal golambda.Event to MyEvent
 		if err := ev.Bind(&msg); err != nil {
-			return nil, err
+			return "", err
 		}
 
 		// Do something
