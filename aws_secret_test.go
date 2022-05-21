@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/m-mizutani/goerr"
-	"github.com/m-mizutani/golambda"
+	"github.com/m-mizutani/golambda/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

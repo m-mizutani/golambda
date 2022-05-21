@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/m-mizutani/golambda"
+	"github.com/m-mizutani/golambda/v2"
 )
 
 func TestDecapSQS(t *testing.T) {

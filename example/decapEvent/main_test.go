@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/m-mizutani/golambda"
+	"github.com/m-mizutani/golambda/v2"
 	"github.com/stretchr/testify/require"
 
-	main "github.com/m-mizutani/golambda/example/decapEvent"
+	main "github.com/m-mizutani/golambda/v2/example/decapEvent"
 )
 
 func TestHandler(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/m-mizutani/golambda"
+	"github.com/m-mizutani/golambda/v2"
 )
 
 // MyEvent is exported for test
