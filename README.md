@@ -16,7 +16,7 @@ NOTE: The suite is **NOT** focusing to Lambda function for API gateway, but part
 ### How to use
 
 ```
-$ go get github.com/m-mizutani/golambda
+$ go get github.com/m-mizutani/golambda/v2
 ```
 
 
@@ -36,7 +36,7 @@ package main
 import (
 	"strings"
 
-	"github.com/m-mizutani/golambda"
+	"github.com/m-mizutani/golambda/v2"
 )
 
 // MyEvent is exported for test
@@ -81,10 +81,10 @@ package main_test
 import (
 	"testing"
 
-	"github.com/m-mizutani/golambda"
+	"github.com/m-mizutani/golambda/v2"
 	"github.com/stretchr/testify/require"
 
-	main "github.com/m-mizutani/golambda/example/decapEvent"
+	main "github.com/m-mizutani/golambda/v2/example/decapEvent"
 )
 
 func TestHandler(t *testing.T) {
@@ -159,7 +159,7 @@ Also, `golambda.Start` supports general error handling:
 package main
 
 import (
-	"github.com/m-mizutani/golambda"
+	"github.com/m-mizutani/golambda/v2"
 )
 
 // Handler is exported for test
