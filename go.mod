@@ -1,4 +1,4 @@
-module github.com/m-mizutani/golambda
+module github.com/m-mizutani/golambda/v2
 
 go 1.18
 
