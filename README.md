@@ -203,6 +203,8 @@ In general, parameters of Lambda function are stored sa environment variable, su
 
 `golambda.GetSecretValues` fetches values of AWS Secrets Manager and binds to a structure variable.
 
+If you implement `golambda.SecretsManagerClient` yourself (or update mocks), note that it matches the AWS SDK for Go v2 client shape: `GetSecretValue` takes a `context.Context` first, then `*secretsmanager.GetSecretValueInput`, plus optional functional options.
+
 ```go
 type mySecret struct {
     Token string `json:"token"`

@@ -1,13 +1,14 @@
 package golambda
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/m-mizutani/goerr"
 )
 
@@ -25,19 +26,17 @@ func GetSecretValues(secretArn string, values interface{}) error {
 }
 
 func newDefaultSecretsManager(region string) (SecretsManagerClient, error) {
-	ssn, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	})
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		return nil, goerr.Wrap(err)
 	}
 
-	return secretsmanager.New(ssn), nil
+	return secretsmanager.NewFromConfig(cfg), nil
 }
 
 // SecretsManagerClient is wrapper of secretsmanager.SecretsManager
 type SecretsManagerClient interface {
-	GetSecretValue(*secretsmanager.GetSecretValueInput) (*secretsmanager.GetSecretValueOutput, error)
+	GetSecretValue(context.Context, *secretsmanager.GetSecretValueInput, ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error)
 }
 
 // SecretsManagerFactory is factory function type to replace SecretsManagerClient
@@ -60,14 +59,14 @@ func GetSecretValuesWithFactory(secretArn string, values interface{}, factory Se
 		return goerr.Wrap(err).With("region", region)
 	}
 
-	result, err := mgr.GetSecretValue(&secretsmanager.GetSecretValueInput{
+	result, err := mgr.GetSecretValue(context.Background(), &secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(secretArn),
 	})
 	if err != nil {
 		return ErrFailedSecretsManager.Wrap(err).With("arn", secretArn)
 	}
 
-	if err := json.Unmarshal([]byte(*result.SecretString), values); err != nil {
+	if err := json.Unmarshal([]byte(aws.ToString(result.SecretString)), values); err != nil {
 		return ErrFailedDecodeSecret.Wrap(err).
 			With("arn", secretArn).
 			With("GetSecretValue:result", result)
@@ -84,11 +83,12 @@ type SecretsManagerMock struct {
 }
 
 // GetSecretValue is mock method for SecretsManagerMock. It checks if the secretId (ARN) exists in SecretsManagerMock.Secrets as key. It returns a string value if existing or ResourceNotFoundException error if not existing.
-func (x *SecretsManagerMock) GetSecretValue(input *secretsmanager.GetSecretValueInput) (*secretsmanager.GetSecretValueOutput, error) {
+func (x *SecretsManagerMock) GetSecretValue(_ context.Context, input *secretsmanager.GetSecretValueInput, _ ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error) {
 	x.Input = append(x.Input, input)
-	value, ok := x.Secrets[*input.SecretId]
+	secretID := aws.ToString(input.SecretId)
+	value, ok := x.Secrets[secretID]
 	if !ok {
-		return nil, errors.New(secretsmanager.ErrCodeResourceNotFoundException)
+		return nil, errors.New("ResourceNotFoundException")
 	}
 
 	return &secretsmanager.GetSecretValueOutput{
