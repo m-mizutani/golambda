@@ -21,7 +21,7 @@ func HandleError(err error) {
 		logger = logger.With("error.stacktrace", goErr.Stacks())
 	}
 
-	logger.Error(err.Error())
+	logger.Error("%s", err.Error())
 }
 
 var (
